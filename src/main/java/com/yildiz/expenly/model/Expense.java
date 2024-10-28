@@ -27,5 +27,5 @@ public class Expense {
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
-    
+
 }
