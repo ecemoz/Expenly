@@ -57,16 +57,18 @@ public class ExpenseController {
 
         String ocrText;
         try {
-            ocrText = ocrService.extractTextfromImage(tempFile);
+            ocrText = ocrService.extractTextFromImage(tempFile);
         } catch (TesseractException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }
         Optional<Expense> parsedExpense = ocrService.parseExpenseFromText(ocrText);
+        System.out.println(ocrText);
 
         return parsedExpense.map(expenseService::createExpense)
                             .map(ResponseEntity::ok)
                             .orElseGet(() -> ResponseEntity.badRequest().build());
+
     }
 
     @DeleteMapping("/{id}")

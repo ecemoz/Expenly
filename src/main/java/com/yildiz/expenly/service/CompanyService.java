@@ -19,7 +19,7 @@ public class CompanyService {
     }
 
     public Optional<Company> getCompanyByName(String name) {
-        return companyRepository.findByCompany_Name(name);
+        return companyRepository.findByCompanyName(name);
     }
 
     public List<Company> getAllCompanies() {
@@ -35,7 +35,7 @@ public class CompanyService {
     }
 
     public Company updateCompany(Long id, Company updatedCompany) {
-        return companyRepository.findByCompany_Id(id)
+        return companyRepository.findById(id)
                 .map(existingCompany -> {
                     existingCompany.setCompanyName(updatedCompany.getCompanyName());
                     existingCompany.setCompanyAddress(updatedCompany.getCompanyAddress());
