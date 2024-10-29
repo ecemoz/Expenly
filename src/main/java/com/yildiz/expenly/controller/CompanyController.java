@@ -1,6 +1,5 @@
 package com.yildiz.expenly.controller;
 
-
 import com.yildiz.expenly.model.Company;
 import com.yildiz.expenly.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
