@@ -5,9 +5,13 @@ import lombok.Getter;
 import lombok.Setter;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,15 +27,20 @@ public class OCRService {
 
     private final Tesseract tesseract;
 
+    @Autowired
+    private ImageProcessService imageProcessService;
+
     public OCRService() {
         tesseract = new Tesseract();
         tesseract.setDatapath("tessdata");
         tesseract.setLanguage("tur");
     }
 
-    public String extractTextFromImage(File imageFile) throws TesseractException {
-        String ocrText = tesseract.doOCR(imageFile);
-        System.out.println("OCR Output:\n" + ocrText); // OCR çıktısını konsola yazdır
+    public String extractTextFromImage(File imageFile) throws TesseractException, IOException {
+        BufferedImage img = ImageIO.read(imageFile);
+        BufferedImage processedImage = imageProcessService.preprocessImage(img);
+        String ocrText = tesseract.doOCR(processedImage);
+        System.out.println("OCR Output:\n" + ocrText);
         return ocrText;
     }
 
@@ -40,7 +49,6 @@ public class OCRService {
             Expense expense = new Expense();
             String[] lines = ocrText.split("\\r?\\n");
 
-            // İşletme adı, tarih ve saat bilgisini ayıklayın
             String storeName = extractStoreName(lines);
             expense.setStoreName(storeName);
             System.out.println("Store Name: " + storeName);
@@ -53,15 +61,13 @@ public class OCRService {
             expense.setExpenseTime(time);
             System.out.println("Time: " + time);
 
-            // Vergi ve toplam tutarları ayıklayın
             BigDecimal taxAmount = BigDecimal.ZERO;
             BigDecimal totalAmount = BigDecimal.ZERO;
             boolean foundDivider = false;
 
             for (String line : lines) {
                 line = line.trim();
-                System.out.println("Processing Line: " + line); // Satırı konsola yazdır
-                    // TOPKDV ve TOPLAM anahtar kelimelerine göre değerleri ayıkla
+                System.out.println("Processing Line: " + line);
                     if (containsKeyword(line, "TOPKDV") && taxAmount.equals(BigDecimal.ZERO)) {
                         taxAmount = extractAmount(line);
                         expense.setTaxAmount(taxAmount);
@@ -75,7 +81,6 @@ public class OCRService {
 
             }
 
-            // Vergisiz toplamı hesapla
             if (!totalAmount.equals(BigDecimal.ZERO) && !taxAmount.equals(BigDecimal.ZERO)) {
                 BigDecimal taxlessExpense = totalAmount.subtract(taxAmount);
                 expense.setTaxlessExpense(taxlessExpense);
@@ -127,9 +132,7 @@ public class OCRService {
     }
 
     private BigDecimal extractAmount(String line) {
-        // Özel karakterleri temizle (x ve * gibi)
-        line = line.replaceAll("[*x]", "").trim(); // * ve x karakterlerini temizle
-        // Düzenli ifadeyi, ondalık sayıları ve binlik ayırıcıları dikkate alacak şekilde güncelle
+        line = line.replaceAll("[*x]", "").trim();
         Pattern amountPattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{1,2})?)");
         Matcher matcher = amountPattern.matcher(line);
         if (matcher.find()) {
@@ -152,10 +155,10 @@ public class OCRService {
         String regex;
         switch (keyword) {
             case "TOPKDV":
-                regex = "TOP[KQ]?[DVÜY]"; // Includes 'Ü' and 'Y' for 'V'
+                regex = "TOP[KQ]?[DVÜY]";
                 break;
             case "TOPLAM":
-                regex = "TOP[L1I][A4][MNxX]?"; // Includes 'x' or 'X' for 'M'
+                regex = "TOP[L1I][A4][MNxX]?";
                 break;
             default:
                 return false;
