@@ -26,4 +26,4 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 3000
 
 # Set the entry point to run the JAR file
-ENTRYPOINT ["java", "-jar", "/*.jar"]
+ENTRYPOINT ["java", "-jar", "*.jar"]
