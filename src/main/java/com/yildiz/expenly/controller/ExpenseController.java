@@ -3,6 +3,7 @@ package com.yildiz.expenly.controller;
 
 import com.yildiz.expenly.model.Expense;
 import com.yildiz.expenly.service.ExpenseService;
+import com.yildiz.expenly.service.ImageProcessService;
 import com.yildiz.expenly.service.OCRService;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +28,8 @@ public class ExpenseController {
 
     @Autowired
     private OCRService ocrService;
+    @Autowired
+    private ImageProcessService imageProcessService;
 
     @PostMapping
     public ResponseEntity<Expense> createExpense(@RequestBody Expense expense) {
@@ -54,7 +60,9 @@ public class ExpenseController {
     public ResponseEntity<Expense> uploadExpenseFile(@RequestParam("file") MultipartFile file) throws IOException {
         File tempFile = File.createTempFile("expense_", ".jpg");
         file.transferTo(tempFile);
-
+        BufferedImage originalImage = ImageIO.read(tempFile);
+        BufferedImage processedImage = imageProcessService.preprocessImage(originalImage);
+        imageProcessService.saveImageToDesktop(processedImage);
         String ocrText;
         try {
             ocrText = ocrService.extractTextFromImage(tempFile);

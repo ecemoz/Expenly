@@ -2,8 +2,11 @@ package com.yildiz.expenly.service;
 
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 @Service
 public class ImageProcessService {
@@ -36,7 +39,7 @@ public class ImageProcessService {
     }
 
     private BufferedImage removeNoise(BufferedImage img) {
-        int threshold = 162; // Eşik değeri
+        int threshold = 180; // Eşik değeri
         for (int x = 0; x < img.getWidth(); x++) {
             for (int y = 0; y < img.getHeight(); y++) {
                 int pixel = img.getRGB(x, y);
@@ -52,4 +55,18 @@ public class ImageProcessService {
         }
         return img;
     }
+
+    public void saveImageToDesktop(BufferedImage img) {
+        String userHome = System.getProperty("user.home");
+        String desktopPath = userHome + File.separator + "Desktop";
+        File outputfile = new File(desktopPath, "processed_image.png");
+        try {
+            ImageIO.write(img, "png", outputfile);
+            System.out.println("Image saved to: " + outputfile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+

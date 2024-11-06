@@ -33,6 +33,7 @@ public class OCRService {
     public OCRService() {
         tesseract = new Tesseract();
         tesseract.setDatapath("tessdata");
+        tesseract.setLanguage("eng");
         tesseract.setLanguage("tur");
     }
 
@@ -108,16 +109,25 @@ public class OCRService {
     }
 
     private LocalDate extractDate(String text) {
-        Pattern datePattern = Pattern.compile("\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b");
+        // Adjust regex to match dates with commas or periods as separators
+        Pattern datePattern = Pattern.compile("\\b(\\d{2}[.,]\\d{2}[.,]\\d{4})\\b");
         Matcher matcher = datePattern.matcher(text);
         if (matcher.find()) {
-            String dateStr = matcher.group(1);
+            // Normalize the date format by replacing commas with periods
+            String dateStr = matcher.group(1).replace(",", ".");
             System.out.println("Found Date: " + dateStr);
-            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            try {
+                // Parse the normalized date string
+                return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            } catch (Exception e) {
+                System.err.println("Date Parse Error: " + e.getMessage());
+            }
         }
+        // If no date is found, default to the current date
         System.out.println("Date Not Found, using current date");
         return LocalDate.now();
     }
+
 
     private LocalTime extractTime(String text) {
         Pattern timePattern = Pattern.compile("\\b(\\d{2}:\\d{2})\\b");
@@ -132,8 +142,8 @@ public class OCRService {
     }
 
     private BigDecimal extractAmount(String line) {
-        line = line.replaceAll("[*x]", "").trim();
-        Pattern amountPattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{1,2})?)");
+        // Allow symbols like ¥, spaces, and commas/periods for decimals
+        Pattern amountPattern = Pattern.compile("[¥€$£]?\\s*(\\d{1,3}(?:[.,]\\d{2})?)");
         Matcher matcher = amountPattern.matcher(line);
         if (matcher.find()) {
             String amountString = matcher.group(1).replace(",", ".").trim();
@@ -148,6 +158,8 @@ public class OCRService {
         }
         return BigDecimal.ZERO;
     }
+
+
 
 
 
