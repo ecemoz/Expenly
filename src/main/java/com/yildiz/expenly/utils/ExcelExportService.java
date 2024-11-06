@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -20,6 +21,29 @@ public class ExcelExportService {
 
     @Autowired
     private ExpenseService expenseService;
+
+    public void exportAllExpensesToExcel(String filePath) {
+        List<Expense> expenses = expenseService.getAllExpenses();
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Expenses");
+
+            createHeaderRow(sheet);
+
+            int rowCount = 1;
+            for (Expense expense : expenses) {
+                Row row = sheet.createRow(rowCount++);
+                writeExpenseToRow(expense, row);
+            }
+
+            try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+                workbook.write(outputStream);
+                System.out.println("Excel file created successfully at: " + filePath);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void exportExpensesToExcel(Long companyId, String filePath) {
         List<Expense> expenses = expenseService.getExpensesByCompanyId(companyId);
@@ -37,7 +61,7 @@ public class ExcelExportService {
 
             try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
                 workbook.write(outputStream);
-                System.out.println("Excel file created successfully at: "+ filePath);
+                System.out.println("Excel file created successfully at: " + filePath);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,11 +89,21 @@ public class ExcelExportService {
     }
 
     private void writeExpenseToRow(Expense expense, Row row) {
-        row.createCell(0).setCellValue(expense.getStoreName());
-        row.createCell(1).setCellValue(expense.getExpenseDate().format(DATE_FORMATTER));
-        row.createCell(2).setCellValue(expense.getExpenseTime().format(TIME_FORMATTER));
-        row.createCell(3).setCellValue(expense.getTotalExpense().doubleValue());
-        row.createCell(4).setCellValue(expense.getTaxAmount().doubleValue());
-        row.createCell(5).setCellValue(expense.getTaxlessExpense().doubleValue());
+        row.createCell(0).setCellValue(expense.getStoreName() != null ? expense.getStoreName() : "Unknown");
+        row.createCell(1).setCellValue(
+                expense.getExpenseDate() != null ? expense.getExpenseDate().format(DATE_FORMATTER) : ""
+        );
+        row.createCell(2).setCellValue(
+                expense.getExpenseTime() != null ? expense.getExpenseTime().format(TIME_FORMATTER) : ""
+        );
+        row.createCell(3).setCellValue(
+                expense.getTotalExpense() != null ? expense.getTotalExpense().doubleValue() : 0.0
+        );
+        row.createCell(4).setCellValue(
+                expense.getTaxAmount() != null ? expense.getTaxAmount().doubleValue() : 0.0
+        );
+        row.createCell(5).setCellValue(
+                expense.getTaxlessExpense() != null ? expense.getTaxlessExpense().doubleValue() : 0.0
+        );
     }
 }

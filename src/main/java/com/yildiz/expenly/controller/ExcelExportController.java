@@ -13,7 +13,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/export")
+@RequestMapping("/export")
 public class ExcelExportController {
 
     @Autowired
@@ -27,8 +27,8 @@ public class ExcelExportController {
 
         File file = new File(filePath);
         byte[] fileContent;
-        try(FileInputStream fis = new FileInputStream(file);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream()){
+        try (FileInputStream fis = new FileInputStream(file);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[1024];
             int bytesRead;
             while ((bytesRead = fis.read(buffer)) != -1) {
@@ -36,9 +36,35 @@ public class ExcelExportController {
             }
             fileContent = bos.toByteArray();
         }
+
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=expenses.xlsx")
                 .body(fileContent);
+    }
+
+    @GetMapping("/allExpenses")
+    public ResponseEntity<byte[]> exportAllExpenses() throws IOException {
+        String filePath = System.getProperty("java.io.tmpdir") + "all_expenses.xlsx" ;
+
+        excelExportService.exportAllExpensesToExcel(filePath);
+
+        File file = new File(filePath);
+        byte[] fileContent;
+        try(FileInputStream fis = new FileInputStream(file);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream()){
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                bos.write(buffer, 0, bytesRead);
+            }
+            fileContent = bos.toByteArray();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=expenses.xlsx")
+                .body(fileContent);
+
     }
 }
